@@ -24,10 +24,6 @@ class SFTP:
         print('close')
         self.transport.close()
 
-# with SFTP('195.123.195.243', 'root', 'zzUA4SjKt9Jn4aj3', 3110) as sftp:
-#     print(dir(sftp))
-#     print(type(sftp))
-
 
 class DiffGenerator:
     repo = Repo(str(Path(__file__).parent.absolute()))
