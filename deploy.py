@@ -35,7 +35,8 @@ class DiffGenerator:
        delete -
        add-delete -
     """
-    repo = Repo(str(Path(__file__).parent.absolute()))
+    def __init__(self, repo_path:str):
+        self.repo = Repo(repo_path)
 
     def _iter(self, commit):
         change_type = {"A":"delete", "D":"add", "R":"add-delete", "M":"add", "T":"add"}
@@ -49,5 +50,14 @@ class DiffGenerator:
                 yield item.b_path, item.a_path, do
 
 
-for s in DiffGenerator():
-    print(s)
+if __name__ == '__main__':
+    if len(sys.argv) <= 4 or sys.argv in ['-h', '--help', '?']:
+        print('    python3 deploy.py {host} {port} {user} {password} {dir_on_server}\n',
+              'where:\n',
+              '   host = address server, example 123.456.788.90 or localhost\n',
+              '   port = port server, example 22\n',
+              '   user = user on server, example root or administrator\n',
+              '   password = password of user, example Qwerty\n',
+              '   dir_on_server = path for dir with edit data, example /var/www/html/site_dir',)
+        exit(1)
+    repo_path = str(Path(__file__).parent.absolute())
