@@ -38,7 +38,7 @@ class DiffGenerator:
     repo = Repo(str(Path(__file__).parent.absolute()))
 
     def _iter(self, commit):
-        change_type = {"A":"add", "D":"delete", "R":"add-delete", "M":"add", "T":"add"}
+        change_type = {"A":"delete", "D":"add", "R":"add-delete", "M":"add", "T":"add"}
         for name, value in change_type.items():
             yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
 
