@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from itertools import chain, cycle
 
 import paramiko
 from git import Repo
@@ -26,11 +27,26 @@ class SFTP:
 
 
 class DiffGenerator:
+    """
+    generate old_file_name :str, new _file_name: str
+    and what with him to do.
+    variant to do:
+       add -
+       delete -
+       add-delete -
+    """
     repo = Repo(str(Path(__file__).parent.absolute()))
 
+    def _iter(self, commit):
+        change_type = {"A":"add", "D":"delete", "R":"add-delete", "M":"add", "T":"add"}
+        for name, value in change_type.items():
+            yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
+
     def __iter__(self):
-        for item in self.repo.index.diff(None):
-            yield item.a_path
+        head_commit = self.repo.head.commit
+        for iterator in self._iter(head_commit):
+            for item, do in iterator:
+                yield item.b_path, item.a_path, do
 
 
 for s in DiffGenerator():
