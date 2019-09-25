@@ -67,11 +67,10 @@ if __name__ == '__main__':
     remote_dir = sys.argv[-1]
     with SFTP(*sys.argv[1:-1]) as sftp:
         sftp.chdir(remote_dir)
-
         delete = lambda old, new:sftp.remove(old)
         move = lambda old, new: sftp.rename(old, new)
         add = lambda old, new: sftp.put(old, new)
-        S = {'delete':delete, 'move':move, 'add':move}
+        S = {'delete':delete, 'move':move, 'add':add}
         for old_path, new_path, what_do in DiffGenerator(repo_path):
             print(old_path, new_path, what_do)
             S.get(what_do)(old_path, new_path)
