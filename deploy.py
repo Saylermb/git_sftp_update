@@ -51,7 +51,7 @@ class DiffGenerator:
 
 
 if __name__ == '__main__':
-    if 5 > len(sys.argv) > 5 or sys.argv in ['-h', '--help', '?']:
+    if  len(sys.argv) != 5 or sys.argv in ['-h', '--help', '?']:
         print('    python3 deploy.py {host} {port} {user} {password} {dir_on_server}\n',
               'where:\n',
               '   host = address server, example 123.456.788.90 or localhost\n',
