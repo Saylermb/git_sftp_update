@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 from itertools import chain, cycle
+from typing import Any
 
 import paramiko
 from git import Repo
@@ -13,18 +14,19 @@ class SFTP:
     |     ...                                         |
     for return object paramiko.sftp_client.SFTPClient
     """
-    def __init__(self, host:str, user:str, password:str, port:int=22):
-        self.transport = paramiko.Transport((host, port))
+    def __init__(self, host:str, user:str, password:str, port:[int,str]=22):
+        self.transport = paramiko.Transport((host, int(port)))
         self.transport.connect(username=user, password=password)
 
-    def __enter__(self):
-        with paramiko.SFTPClient.from_transport(self.transport) as sftp:
-            return sftp
+    def __enter__(self)-> paramiko.sftp_client.SFTPClient:
+        return paramiko.SFTPClient.from_transport(self.transport)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        print('close')
+        print('connection is close')
         self.transport.close()
 
+    def __getattr__(self, item):
+        raise AttributeError
 
 class DiffGenerator:
     """
@@ -39,7 +41,7 @@ class DiffGenerator:
         self.repo = Repo(repo_path)
 
     def _iter(self, commit):
-        change_type = {"A":"delete", "D":"add", "R":"add-delete", "M":"add", "T":"add"}
+        change_type = {"A":"delete", "D":"add", "R":"move", "M":"add", "T":"add"}
         for name, value in change_type.items():
             yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
 
@@ -52,7 +54,7 @@ class DiffGenerator:
 
 if __name__ == '__main__':
     if  len(sys.argv) != 6 or sys.argv in ['-h', '--help', '?']:
-        print('    python3 deploy.py {host} {port} {user} {password} {dir_on_server}\n',
+        print('    python3 deploy.py {host} {user} {password} {port} {dir_on_server}\n',
               'where:\n',
               '   host = address server, example 123.456.788.90 or localhost\n',
               '   port = port server, example 22\n',
@@ -60,6 +62,19 @@ if __name__ == '__main__':
               '   password = password of user, example Qwerty\n',
               '   dir_on_server = path for dir with edit data, example /var/www/html/site_dir',)
         exit(1)
+    print("")
     repo_path = str(Path(__file__).parent.absolute())
-    dir_ = sys.argv[-1]
-    sftp = SFTP(*sys.argv[1:-1])
+    remote_dir = sys.argv[-1]
+    with SFTP(*sys.argv[1:-1]) as sftp:
+        sftp.chdir(remote_dir)
+
+        delete = lambda old, new:sftp.remove(old)
+        move = lambda old, new: sftp.rename(old, new)
+        add = lambda old, new: sftp.put(old, new)
+        S = {'delete':delete, 'move':move, 'add':move}
+        for old_path, new_path, what_do in DiffGenerator(repo_path):
+            print(old_path, new_path, what_do)
+            S.get(what_do)(old_path, new_path)
+
+
+
