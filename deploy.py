@@ -41,7 +41,10 @@ class DiffGenerator:
         self.repo = Repo(repo_path)
 
     def _iter(self, commit):
-        change_type = {"A":"delete", "D":"add", "R":"move", "M":"add", "T":"add"}
+        change_type = {"A":"delete", "D":"add", "M":"add", "T":"add"}
+        for name, value in change_type.items():
+            yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
+        change_type = {"R":"move",}
         for name, value in change_type.items():
             yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
 
@@ -73,7 +76,11 @@ if __name__ == '__main__':
         S = {'delete':delete, 'move':move, 'add':add}
         for old_path, new_path, what_do in DiffGenerator(repo_path):
             print(old_path, new_path, what_do)
-            S.get(what_do)(old_path, new_path)
+            try:
+                S.get(what_do)(old_path, new_path)
+            except FileNotFoundError:
+                print(f'Exception! Not found file {new_path}')
+                continue
 
 
 
