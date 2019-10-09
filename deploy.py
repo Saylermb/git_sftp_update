@@ -51,15 +51,19 @@ class DiffGenerator:
         head_commit_datatime = self.repo.head.commit.committed_datetime
         for commit in list(self.repo.iter_commits()):
             if commit.committed_datetime != head_commit_datatime:
-                continue
-        for iterator in self._iter(commit):
-            for item, do in iterator:
-                yield item.b_path, item.a_path, do
+                break
+            for iterator in self._iter(commit):
+                for item, do in iterator:
+                    yield item.b_path, item.a_path, do
 
 def recursive_create_dir(sftp, path):
     try:
+        print(str(path))
         sftp.mkdir(str(path))
-    except:
+    except OSError:
+        if str(path) == '.':
+            print('error')
+            exit(0)
         print(f'Exception! Not found file {str(path)}')
         recursive_create_dir(sftp, path.parent)
 
@@ -90,7 +94,7 @@ if __name__ == '__main__':
             except:
                 if what_do == 'delete':
                     continue
-                print(f'Exception! Not found file {new_path}')
+                print(f'Exception! Not found file {old_path} > {new_path}')
                 recursive_create_dir(sftp, Path(new_path).parent)
                 S.get(what_do)(old_path, new_path)
                 print(old_path, new_path, what_do)
