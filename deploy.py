@@ -54,6 +54,13 @@ class DiffGenerator:
             for item, do in iterator:
                 yield item.b_path, item.a_path, do
 
+def recursive_create_dir(sftp, path):
+    try:
+        sftp.mkdir(str(path))
+    except:
+        print(f'Exception! Not found file {str(path)}')
+        recursive_create_dir(sftp, path.parent)
+
 
 if __name__ == '__main__':
     if  len(sys.argv) != 6 or sys.argv in ['-h', '--help', '?']:
@@ -78,9 +85,14 @@ if __name__ == '__main__':
             print(old_path, new_path, what_do)
             try:
                 S.get(what_do)(old_path, new_path)
-            except FileNotFoundError:
+            except:
+                if what_do == 'delete':
+                    continue
                 print(f'Exception! Not found file {new_path}')
-                continue
+                recursive_create_dir(sftp, Path(new_path).parent)
+                print(1)
+                S.get(what_do)(old_path, new_path)
+                print(2)
 
 
 
