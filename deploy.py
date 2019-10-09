@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
-from itertools import chain, cycle
-from typing import Any
+from itertools import cycle
 
 import paramiko
 from git import Repo
@@ -49,8 +48,11 @@ class DiffGenerator:
             yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
 
     def __iter__(self):
-        head_commit = self.repo.head.commit
-        for iterator in self._iter(head_commit):
+        head_commit_datatime = self.repo.head.commit.committed_datetime
+        for commit in list(self.repo.iter_commits()):
+            if commit.committed_datetime != head_commit_datatime:
+                continue
+        for iterator in self._iter(commit):
             for item, do in iterator:
                 yield item.b_path, item.a_path, do
 
@@ -90,9 +92,8 @@ if __name__ == '__main__':
                     continue
                 print(f'Exception! Not found file {new_path}')
                 recursive_create_dir(sftp, Path(new_path).parent)
-                print(1)
                 S.get(what_do)(old_path, new_path)
-                print(2)
+                print(old_path, new_path, what_do)
 
 
 
