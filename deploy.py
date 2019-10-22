@@ -48,20 +48,25 @@ class DiffGenerator:
         return self.repo.head.commit.name_rev
 
     def _iter(self, commit):
-        change_type = {"A": "delete", "D": "add", "M": "add", "T": "add", "R": "move",}
-        for name, value in change_type.items():
-            yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
+        change_type = {"A": "delete", "D": "add", "M": "add", "T": "add", "R": "move", }
+        for dif in commit.diff('HEAD~1'):
+            yield dif, change_type.get(dif.change_type)
         # change_type = {"R": "move", }
         # for name, value in change_type.items():
         #     yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
 
     def __iter__(self):
-        for commit in list(self.repo.iter_commits()):
+        commits_list =  list(self.repo.iter_commits())
+        while commits_list:
+            commit = commits_list.pop()
             if commit.name_rev == self.last_commit:
                 break
-            for iterator in self._iter(commit):
-                for item, do in iterator:
-                    yield item.b_path, item.a_path, do
+        print(commits_list)
+        for commit in reversed(commits_list):
+            if commit.name_rev != self.last_commit:
+                break
+            for item, do in self._iter(commit):
+                yield item.b_path, item.a_path, do
 
 
 # def recursive_create_dir(sftp, path):
@@ -76,13 +81,12 @@ class DiffGenerator:
 #         recursive_create_dir(sftp, path.parent)
 
 def recursive_create_dir(sftp, path, depth=0):
-    if depth>= len(path.parents)-1:
+    if depth >= len(path.parents) - 1:
         return
-    print(sftp.listdir(str(path.parents[len(path.parents)-1 - depth])))
-    directory = path.parents[len(path.parents)-2-depth]
-    print(directory.name)
+    print(sftp.listdir(str(path.parents[len(path.parents) - 1 - depth])))
+    directory = path.parents[len(path.parents) - 2 - depth]
 
-    if not directory.name in sftp.listdir(str(path.parents[len(path.parents)-1 - depth])):
+    if not directory.name in sftp.listdir(str(path.parents[len(path.parents) - 1 - depth])):
         print(f'create dir {str(directory)}')
         sftp.mkdir(str(directory))
         depth += 1
@@ -90,8 +94,6 @@ def recursive_create_dir(sftp, path, depth=0):
     else:
         depth += 1
         recursive_create_dir(sftp, path, depth)
-
-
 
 
 delete = lambda old, new: sftp.remove(old)
@@ -129,7 +131,7 @@ if __name__ == '__main__':
             except:
                 if what_do == 'delete':
                     continue
-                print(f'Exception! file change {old_path} > {new_path}')
+                print(f'Exception in file change {old_path} > {new_path}')
                 recursive_create_dir(sftp, Path(new_path))
                 S.get(what_do)(old_path, new_path)
                 print(old_path, new_path, what_do)
