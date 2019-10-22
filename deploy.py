@@ -54,7 +54,7 @@ class DiffGenerator:
 
     def __iter__(self):
         for commit in list(self.repo.iter_commits()):
-            if commit.name_rev != self.last_commit:
+            if commit.name_rev == self.last_commit:
                 break
             for iterator in self._iter(commit):
                 for item, do in iterator:
