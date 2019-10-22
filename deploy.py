@@ -99,6 +99,7 @@ if __name__ == '__main__':
                 last_commit_name = file_commit.read()
         except FileNotFoundError:
             last_commit_name = None
+        print(f'last commit {last_commit_name}')
         diff = DiffGenerator(repo_path, last_commit_name)
         for old_path, new_path, what_do in diff:
             print(old_path, new_path, what_do)
