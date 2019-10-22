@@ -14,11 +14,12 @@ class SFTP:
     |     ...                                         |
     for return object paramiko.sftp_client.SFTPClient
     """
-    def __init__(self, host:str, user:str, password:str, port:[int,str]=22):
+
+    def __init__(self, host: str, user: str, password: str, port: [int, str] = 22):
         self.transport = paramiko.Transport((host, int(port)))
         self.transport.connect(username=user, password=password)
 
-    def __enter__(self)-> paramiko.sftp_client.SFTPClient:
+    def __enter__(self) -> paramiko.sftp_client.SFTPClient:
         return paramiko.SFTPClient.from_transport(self.transport)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -27,6 +28,7 @@ class SFTP:
 
     def __getattr__(self, item):
         raise AttributeError
+
 
 class DiffGenerator:
     """
@@ -37,7 +39,8 @@ class DiffGenerator:
        delete -
        add-delete -
     """
-    def __init__(self, repo_path:str, commit:str=None):
+
+    def __init__(self, repo_path: str, commit: str = None):
         self.repo = Repo(repo_path)
         self.last_commit = commit or self.repo.head.commit.name_rev
 
@@ -45,12 +48,12 @@ class DiffGenerator:
         return self.repo.head.commit.name_rev
 
     def _iter(self, commit):
-        change_type = {"A":"delete", "D":"add", "M":"add", "T":"add"}
+        change_type = {"A": "delete", "D": "add", "M": "add", "T": "add", "R": "move",}
         for name, value in change_type.items():
             yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
-        change_type = {"R":"move",}
-        for name, value in change_type.items():
-            yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
+        # change_type = {"R": "move", }
+        # for name, value in change_type.items():
+        #     yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
 
     def __iter__(self):
         for commit in list(self.repo.iter_commits()):
@@ -60,33 +63,51 @@ class DiffGenerator:
                 for item, do in iterator:
                     yield item.b_path, item.a_path, do
 
-def recursive_create_dir(sftp, path):
-    try:
-        print(str(path))
-        sftp.mkdir(str(path))
-    except OSError:
-        if str(path) == '.':
-            print('error')
-            exit(0)
-        print(f'Exception! Not found file {str(path)}')
-        recursive_create_dir(sftp, path.parent)
+
+# def recursive_create_dir(sftp, path):
+#     try:
+#         print(str(path))
+#         sftp.mkdir(str(path))
+#     except OSError:
+#         if str(path) == '.':
+#             print('error')
+#             exit(0)
+#         print(f'Exception! Not found file {str(path)}')
+#         recursive_create_dir(sftp, path.parent)
+
+def recursive_create_dir(sftp, path, depth=0):
+    if depth>= len(path.parents)-1:
+        return
+    print(sftp.listdir(str(path.parents[len(path.parents)-1 - depth])))
+    directory = path.parents[len(path.parents)-2-depth]
+    print(directory.name)
+
+    if not directory.name in sftp.listdir(str(path.parents[len(path.parents)-1 - depth])):
+        print(f'create dir {str(directory)}')
+        sftp.mkdir(str(directory))
+        depth += 1
+        recursive_create_dir(sftp, path, depth)
+    else:
+        depth += 1
+        recursive_create_dir(sftp, path, depth)
 
 
-delete = lambda old, new:sftp.remove(old)
+
+
+delete = lambda old, new: sftp.remove(old)
 move = lambda old, new: sftp.rename(old, new)
 add = lambda old, new: sftp.put(old, new)
-S = {'delete':delete, 'move':move, 'add':add}
-
+S = {'delete': delete, 'move': move, 'add': add}
 
 if __name__ == '__main__':
-    if  len(sys.argv) != 6 or sys.argv in ['-h', '--help', '?']:
+    if len(sys.argv) != 6 or sys.argv in ['-h', '--help', '?']:
         print('    python3 deploy.py {host} {user} {password} {port} {dir_on_server}\n',
               'where:\n',
               '   host = address server, example 123.456.788.90 or localhost\n',
               '   port = port server, example 22\n',
               '   user = user on server, example root or administrator\n',
               '   password = password of user, example Qwerty\n',
-              '   dir_on_server = path for dir with edit data, example /var/www/html/site_dir',)
+              '   dir_on_server = path for dir with edit data, example /var/www/html/site_dir', )
         exit(1)
     print("")
     repo_path = str(Path(__file__).parent.absolute())
@@ -108,14 +129,11 @@ if __name__ == '__main__':
             except:
                 if what_do == 'delete':
                     continue
-                print(f'Exception! Not found file {old_path} > {new_path}')
-                recursive_create_dir(sftp, Path(new_path).parent)
+                print(f'Exception! file change {old_path} > {new_path}')
+                recursive_create_dir(sftp, Path(new_path))
                 S.get(what_do)(old_path, new_path)
                 print(old_path, new_path, what_do)
         with open('.git.update', 'w') as file_commit:
             file_commit.write(diff.head_commit_name())
 
         sftp.put('.git.update', '.git.update')
-
-
-
