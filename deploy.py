@@ -1,4 +1,5 @@
 import sys
+import traceback
 from pathlib import Path
 from itertools import cycle
 
@@ -36,8 +37,12 @@ class DiffGenerator:
        delete -
        add-delete -
     """
-    def __init__(self, repo_path:str):
+    def __init__(self, repo_path:str, commit:str=None):
         self.repo = Repo(repo_path)
+        self.last_commit = commit or self.repo.head.commit.name_rev
+
+    def head_commit_name(self):
+        return self.repo.head.commit.name_rev
 
     def _iter(self, commit):
         change_type = {"A":"delete", "D":"add", "M":"add", "T":"add"}
@@ -48,9 +53,8 @@ class DiffGenerator:
             yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
 
     def __iter__(self):
-        head_commit_datatime = self.repo.head.commit.committed_datetime
         for commit in list(self.repo.iter_commits()):
-            if commit.committed_datetime != head_commit_datatime:
+            if commit.name_rev != self.last_commit:
                 break
             for iterator in self._iter(commit):
                 for item, do in iterator:
@@ -68,6 +72,12 @@ def recursive_create_dir(sftp, path):
         recursive_create_dir(sftp, path.parent)
 
 
+delete = lambda old, new:sftp.remove(old)
+move = lambda old, new: sftp.rename(old, new)
+add = lambda old, new: sftp.put(old, new)
+S = {'delete':delete, 'move':move, 'add':add}
+
+
 if __name__ == '__main__':
     if  len(sys.argv) != 6 or sys.argv in ['-h', '--help', '?']:
         print('    python3 deploy.py {host} {user} {password} {port} {dir_on_server}\n',
@@ -83,11 +93,14 @@ if __name__ == '__main__':
     remote_dir = sys.argv[-1]
     with SFTP(*sys.argv[1:-1]) as sftp:
         sftp.chdir(remote_dir)
-        delete = lambda old, new:sftp.remove(old)
-        move = lambda old, new: sftp.rename(old, new)
-        add = lambda old, new: sftp.put(old, new)
-        S = {'delete':delete, 'move':move, 'add':add}
-        for old_path, new_path, what_do in DiffGenerator(repo_path):
+        try:
+            sftp.get('.git.update', '.git.update')
+            with open('.git.update') as file_commit:
+                last_commit_name = file_commit.read()
+        except FileNotFoundError:
+            last_commit_name = None
+        diff = DiffGenerator(repo_path, last_commit_name)
+        for old_path, new_path, what_do in diff:
             print(old_path, new_path, what_do)
             try:
                 S.get(what_do)(old_path, new_path)
@@ -98,6 +111,10 @@ if __name__ == '__main__':
                 recursive_create_dir(sftp, Path(new_path).parent)
                 S.get(what_do)(old_path, new_path)
                 print(old_path, new_path, what_do)
+        with open('.git.update', 'w') as file_commit:
+            file_commit.write(diff.head_commit_name())
+
+        sftp.put('.git.update', '.git.update')
 
 
 
