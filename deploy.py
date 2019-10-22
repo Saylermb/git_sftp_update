@@ -60,7 +60,7 @@ class DiffGenerator:
         while commits_list:
             commit = commits_list.pop()
             print(f"{commit.name_rev} == {self.last_commit}")
-            if commit.name_rev == self.last_commit:
+            if commit.name_rev.find(self.last_commit):
                 break
         print(commits_list)
         for commit in reversed(commits_list):
