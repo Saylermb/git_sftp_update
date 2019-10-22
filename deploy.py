@@ -64,8 +64,6 @@ class DiffGenerator:
                 break
         print(commits_list)
         for commit in reversed(commits_list):
-            if commit.name_rev != self.last_commit:
-                break
             for item, do in self._iter(commit):
                 yield item.b_path, item.a_path, do
 
