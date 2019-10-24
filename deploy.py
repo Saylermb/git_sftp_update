@@ -1,33 +1,10 @@
+import os
 import sys
-import traceback
 from pathlib import Path
-from itertools import cycle
 
-import paramiko
 from git import Repo
 
-
-class SFTP:
-    """
-    Do:
-    |with SFTP('localhost', 'root', '123456') as sftp:|
-    |     ...                                         |
-    for return object paramiko.sftp_client.SFTPClient
-    """
-
-    def __init__(self, host: str, user: str, password: str, port: [int, str] = 22):
-        self.transport = paramiko.Transport((host, int(port)))
-        self.transport.connect(username=user, password=password)
-
-    def __enter__(self) -> paramiko.sftp_client.SFTPClient:
-        return paramiko.SFTPClient.from_transport(self.transport)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        print('connection is close')
-        self.transport.close()
-
-    def __getattr__(self, item):
-        raise AttributeError
+from sftp import SFTP
 
 
 class DiffGenerator:
@@ -68,38 +45,73 @@ class DiffGenerator:
             for item, do in self._iter(commit):
                 yield item.b_path, item.a_path, do
 
+class Deploy:
+    delete = lambda old, new: sftp.remove(old)
+    move = lambda old, new: sftp.rename(old, new)
+    add = lambda old, new: sftp.put(old, new)
+    S = {'delete': delete, 'move': move, 'add': add}
 
-# def recursive_create_dir(sftp, path):
-#     try:
-#         print(str(path))
-#         sftp.mkdir(str(path))
-#     except OSError:
-#         if str(path) == '.':
-#             print('error')
-#             exit(0)
-#         print(f'Exception! Not found file {str(path)}')
-#         recursive_create_dir(sftp, path.parent)
-
-def recursive_create_dir(sftp, path, depth=0):
-    if depth >= len(path.parents) - 1:
-        return
-    print(sftp.listdir(str(path.parents[len(path.parents) - 1 - depth])))
-    directory = path.parents[len(path.parents) - 2 - depth]
-
-    if not directory.name in sftp.listdir(str(path.parents[len(path.parents) - 1 - depth])):
-        print(f'create dir {str(directory)}')
-        sftp.mkdir(str(directory))
-        depth += 1
-        recursive_create_dir(sftp, path, depth)
-    else:
-        depth += 1
-        recursive_create_dir(sftp, path, depth)
+    def __init__(self, host, username, password, port, path, repo_path=None):
+        self.repo_path = repo_path if repo_path else str(Path(__file__).parent)
+        self.remote_dir = path
+        self._client = SFTP(host, username, password, port)
+        self.structure = self.get_structure()
+        self.sftp = None
 
 
-delete = lambda old, new: sftp.remove(old)
-move = lambda old, new: sftp.rename(old, new)
-add = lambda old, new: sftp.put(old, new)
-S = {'delete': delete, 'move': move, 'add': add}
+    def __call__(self, *args, **kwargs):
+        self.sftp = self._client.connect()
+        sftp.chdir(self.remote_dir)
+
+        for old_path, new_path, what_do in diff:
+            print(old_path, new_path, what_do)
+            try:
+                self.S.get(what_do)(old_path, new_path)
+            except:
+                if what_do == 'delete':
+                    continue
+                print(f'Exception in file change {old_path} > {new_path}')
+                self.recursive_create_dir(sftp, Path(new_path))
+                self.S.get(what_do)(old_path, new_path)
+                print(old_path, new_path, what_do)
+        with open('.git.update', 'w') as file_commit:
+            file_commit.write(diff.head_commit_name())
+
+        sftp.put('.git.update', '.git.update')
+        
+
+    def get_difference(self):
+        try:
+            self.sftp.get('.git.update', '.git.update')
+            with open('.git.update') as file_commit:
+                last_commit_name = file_commit.read()
+        except FileNotFoundError:
+            last_commit_name = None
+        print(f'last commit {last_commit_name}')
+        return DiffGenerator(repo_path, last_commit_name)
+
+    @staticmethod
+    def recursive_create_dir(sftp, path, depth=0):
+            if depth >= len(path.parents) - 1:
+                return
+            print(sftp.listdir(str(path.parents[len(path.parents) - 1 - depth])))
+            directory = path.parents[len(path.parents) - 2 - depth]
+
+            if not directory.name in sftp.listdir(str(path.parents[len(path.parents) - 1 - depth])):
+                print(f'create dir {str(directory)}')
+                sftp.mkdir(str(directory))
+                depth += 1
+                Deploy.recursive_create_dir(sftp, path, depth)
+            else:
+                depth += 1
+                Deploy.recursive_create_dir(sftp, path, depth)
+
+    @staticmethod
+    def get_structure(path):
+        return [path_[0] for path_ in os.walk(path)]
+
+
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 6 or sys.argv in ['-h', '--help', '?']:
