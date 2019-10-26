@@ -26,9 +26,9 @@ class DiffGenerator:
     def head_commit_name(self):
         return self.repo.head.commit.name_rev
 
-    def _iter(self, commit):
+    def _iter(self, commit, last_commit):
         change_type = {"A": "add", "D": "delete", "M": "add", "T": "add", "R": "move", }
-        for dif in commit.diff('HEAD~1'):
+        for dif in commit.diff(last_commit):
             yield dif, change_type.get(dif.change_type)
         # change_type = {"R": "move", }
         # for name, value in change_type.items():
@@ -39,7 +39,7 @@ class DiffGenerator:
         commits_list = list(dropwhile(func, reversed(list(self.repo.iter_commits()))))
         print(commits_list)
         print(self.head_commit_name())
-        for item, do in self._iter(commits_list[0]):
+        for item, do in self._iter(commits_list[0], commits_list[-1]):
             yield item.b_path, item.a_path, do
 
 
