@@ -1,5 +1,4 @@
 import os
-import sys
 from itertools import dropwhile
 from pathlib import Path
 from typing import Union
@@ -51,7 +50,7 @@ class DiffGenerator:
 
 class SFTPDeploy(SFTP):
 
-    def __init__(self, host: str, user: str, password:str,
+    def __init__(self, host: str, user: str, password: str,
                  port: Union[int, str], path: str, repo_path=None):
         super().__init__(host, user, password, port)
         self.repo_path = repo_path if repo_path else str(Path(__file__).parent)
@@ -67,16 +66,23 @@ class SFTPDeploy(SFTP):
         for old_path, new_path, what_do in diff:
             print(what_do, old_path, new_path)
             if what_do == 'add':
-                self.sftp.put(str(Path(self.repo_path).joinpath(old_path)), new_path)
+                self._add(new_path)
             elif what_do == 'delete':
                 self.sftp.remove(new_path)
             elif what_do == 'move':
                 self.sftp.remove(old_path)
-                self.sftp.put(str(Path(self.repo_path).joinpath(old_path)), new_path)
+                self._add(new_path)
         with open('.git.update', 'w') as file_commit:
             file_commit.write(diff.head_commit_name())
 
         self.sftp.put('.git.update', '.git.update')
+
+    def _add(self, path: str):
+        try:
+            self.sftp.put(str(Path(self.repo_path).joinpath(path)), path)
+        except:
+            self.recursive_create_dir(self.sftp, Path(path))
+            self.sftp.put(str(Path(self.repo_path).joinpath(path)), path)
 
     def get_difference(self):
         try:
@@ -89,7 +95,7 @@ class SFTPDeploy(SFTP):
         return DiffGenerator(self.repo_path, last_commit_name)
 
     @staticmethod
-    def recursive_create_dir(sftp, path, depth=0):
+    def recursive_create_dir(sftp, path: Path, depth=0):
         if depth >= len(path.parents) - 1:
             return
         print(sftp.listdir(str(path.parents[len(path.parents) - 1 - depth])))
@@ -111,22 +117,10 @@ class SFTPDeploy(SFTP):
 
 if __name__ == '__main__':
     host = os.environ.get('HOST')
-    user = os.environ.get('USER')
+    user = os.environ.get('USER', 'root')
     password = os.environ.get('PASSWORD')
-    port = os.environ.get('PORT')
+    port = os.environ.get('PORT', '22')
     dir_on_server = os.environ.get('DIR_ON_SERVER')
     repo_dir = '/github/workspace'
-
-    # if len(sys.argv) != 7 or sys.argv in ['-h', '--help', '?']:
-    #     print('    python3 deploy.py {host} {user} {password} {port} {dir_on_server} {repo_dir}\n',
-    #           'where:\n',
-    #           '   host = address server, example 123.456.788.90 or localhost\n',
-    #           '   port = port server, example 22\n',
-    #           '   user = user on server, example root or administrator\n',
-    #           '   password = password of user, example Qwerty\n',
-    #           '   dir_on_server = path for dir with edit data, example /var/www/html/site_dir\n',
-    #           '   repo_dir dir for repository')
-    #     exit(1)
-    # print("")
     print(host, user, password, port, dir_on_server, repo_dir)
     SFTPDeploy(host, user, password, port, dir_on_server, repo_dir)()
