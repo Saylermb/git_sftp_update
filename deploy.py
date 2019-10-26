@@ -39,9 +39,8 @@ class DiffGenerator:
         commits_list = list(dropwhile(func, reversed(list(self.repo.iter_commits()))))
         print(commits_list)
         print(self.head_commit_name())
-        for commit in commits_list:
-            for item, do in self._iter(commit):
-                yield item.b_path, item.a_path, do
+        for item, do in self._iter(commits_list[0]):
+            yield item.b_path, item.a_path, do
 
 
 class SFTPDeploy(SFTP):
