@@ -5,4 +5,4 @@ ADD sftp.py /sftp.py
 ADD requirements.txt /requirements.txt
 
 RUN pip install -r requirements.txt
-ENTRYPOINT python3 deploy.py
+ENTRYPOINT python3 /deploy.py
