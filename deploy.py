@@ -115,7 +115,7 @@ if __name__ == '__main__':
     password = os.environ.get('PASSWORD')
     port = os.environ.get('PORT')
     dir_on_server = os.environ.get('DIR_ON_SERVER')
-    repo_dir = os.environ.get('REPO_DIR')
+    repo_dir = '/github/workspace'
 
     # if len(sys.argv) != 7 or sys.argv in ['-h', '--help', '?']:
     #     print('    python3 deploy.py {host} {user} {password} {port} {dir_on_server} {repo_dir}\n',
