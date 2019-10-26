@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from typing import Any, Union
 
 from git import Repo
 
@@ -36,48 +37,48 @@ class DiffGenerator:
         commits_list =  list(self.repo.iter_commits())
         while commits_list:
             commit = commits_list.pop()
-            print(f"{commit.name_rev} == {self.last_commit}")
             if commit.name_rev.split(' ')[0] == self.last_commit.split(' ')[0]:
                 commits_list = [commit]
                 break
         print(commits_list)
+        print(self.head_commit_name())
         for commit in reversed(commits_list):
             for item, do in self._iter(commit):
                 yield item.b_path, item.a_path, do
 
-class Deploy:
-    delete = lambda old, new: sftp.remove(old)
-    move = lambda old, new: sftp.rename(old, new)
-    add = lambda old, new: sftp.put(old, new)
-    S = {'delete': delete, 'move': move, 'add': add}
 
-    def __init__(self, host, username, password, port, path, repo_path=None):
+class SFTPDeploy(SFTP):
+
+    def __init__(self,  host: str, user: str, password:
+    str, path:str, port: Union[int, str] = 22 , repo_path=None):
+        super().__init__(host, user, password, port)
         self.repo_path = repo_path if repo_path else str(Path(__file__).parent)
         self.remote_dir = path
-        self._client = SFTP(host, username, password, port)
-        self.structure = self.get_structure()
+        self.structure = self.get_structure(self.repo_path)
         self.sftp = None
 
 
     def __call__(self, *args, **kwargs):
-        self.sftp = self._client.connect()
-        sftp.chdir(self.remote_dir)
+        self.sftp = self.connect()
+        self.sftp.chdir(self.remote_dir)
+        diff = self.get_difference()
 
         for old_path, new_path, what_do in diff:
             print(old_path, new_path, what_do)
             try:
-                self.S.get(what_do)(old_path, new_path)
+                print(what_do, old_path, new_path)
+                continue
             except:
                 if what_do == 'delete':
                     continue
                 print(f'Exception in file change {old_path} > {new_path}')
-                self.recursive_create_dir(sftp, Path(new_path))
+                self.recursive_create_dir(self.sftp, Path(new_path))
                 self.S.get(what_do)(old_path, new_path)
                 print(old_path, new_path, what_do)
         with open('.git.update', 'w') as file_commit:
             file_commit.write(diff.head_commit_name())
 
-        sftp.put('.git.update', '.git.update')
+        self.sftp.put('.git.update', '.git.update')
         
 
     def get_difference(self):
@@ -88,7 +89,7 @@ class Deploy:
         except FileNotFoundError:
             last_commit_name = None
         print(f'last commit {last_commit_name}')
-        return DiffGenerator(repo_path, last_commit_name)
+        return DiffGenerator(self.repo_path, last_commit_name)
 
     @staticmethod
     def recursive_create_dir(sftp, path, depth=0):
@@ -101,10 +102,10 @@ class Deploy:
                 print(f'create dir {str(directory)}')
                 sftp.mkdir(str(directory))
                 depth += 1
-                Deploy.recursive_create_dir(sftp, path, depth)
+                SFTPDeploy.recursive_create_dir(sftp, path, depth)
             else:
                 depth += 1
-                Deploy.recursive_create_dir(sftp, path, depth)
+                SFTPDeploy.recursive_create_dir(sftp, path, depth)
 
     @staticmethod
     def get_structure(path):
@@ -114,6 +115,8 @@ class Deploy:
 
 
 if __name__ == '__main__':
+    SFTPDeploy('195.123.195.243', 'root', 'zzUA4SjKt9Jn4aj3', '/var/www/html', 3110,)()
+
     if len(sys.argv) != 6 or sys.argv in ['-h', '--help', '?']:
         print('    python3 deploy.py {host} {user} {password} {port} {dir_on_server}\n',
               'where:\n',
@@ -126,28 +129,28 @@ if __name__ == '__main__':
     print("")
     repo_path = str(Path(__file__).parent.absolute())
     remote_dir = sys.argv[-1]
-    with SFTP(*sys.argv[1:-1]) as sftp:
-        sftp.chdir(remote_dir)
-        try:
-            sftp.get('.git.update', '.git.update')
-            with open('.git.update') as file_commit:
-                last_commit_name = file_commit.read()
-        except FileNotFoundError:
-            last_commit_name = None
-        print(f'last commit {last_commit_name}')
-        diff = DiffGenerator(repo_path, last_commit_name)
-        for old_path, new_path, what_do in diff:
-            print(old_path, new_path, what_do)
-            try:
-                S.get(what_do)(old_path, new_path)
-            except:
-                if what_do == 'delete':
-                    continue
-                print(f'Exception in file change {old_path} > {new_path}')
-                recursive_create_dir(sftp, Path(new_path))
-                S.get(what_do)(old_path, new_path)
-                print(old_path, new_path, what_do)
-        with open('.git.update', 'w') as file_commit:
-            file_commit.write(diff.head_commit_name())
-
-        sftp.put('.git.update', '.git.update')
+    # with SFTP(*sys.argv[1:-1]) as sftp:
+    #     sftp.chdir(remote_dir)
+    #     try:
+    #         sftp.get('.git.update', '.git.update')
+    #         with open('.git.update') as file_commit:
+    #             last_commit_name = file_commit.read()
+    #     except FileNotFoundError:
+    #         last_commit_name = None
+    #     print(f'last commit {last_commit_name}')
+    #     diff = DiffGenerator(repo_path, last_commit_name)
+    #     for old_path, new_path, what_do in diff:
+    #         print(old_path, new_path, what_do)
+    #         try:
+    #             S.get(what_do)(old_path, new_path)
+    #         except:
+    #             if what_do == 'delete':
+    #                 continue
+    #             print(f'Exception in file change {old_path} > {new_path}')
+    #             recursive_create_dir(sftp, Path(new_path))
+    #             S.get(what_do)(old_path, new_path)
+    #             print(old_path, new_path, what_do)
+    #     with open('.git.update', 'w') as file_commit:
+    #         file_commit.write(diff.head_commit_name())
+    #
+    #     sftp.put('.git.update', '.git.update')
