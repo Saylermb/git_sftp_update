@@ -21,7 +21,12 @@ class DiffGenerator:
 
     def __init__(self, repo_path: str, commit: str = None):
         self.repo = Repo(repo_path)
-        self.last_commit = commit or self.repo.head.commit.name_rev
+        self.last_commit = commit or self._pre_last_commit().name_rev
+
+    def _pre_last_commit(self):
+        iter = self.repo.iter_commits()
+        next(iter)
+        return next(iter)
 
     def head_commit_name(self):
         return self.repo.head.commit.name_rev
