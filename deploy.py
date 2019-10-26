@@ -104,11 +104,8 @@ class SFTPDeploy(SFTP):
         if not directory.name in sftp.listdir(str(path.parents[len(path.parents) - 1 - depth])):
             print(f'create dir {str(directory)}')
             sftp.mkdir(str(directory))
-            depth += 1
-            SFTPDeploy.recursive_create_dir(sftp, path, depth)
-        else:
-            depth += 1
-            SFTPDeploy.recursive_create_dir(sftp, path, depth)
+        depth += 1
+        SFTPDeploy.recursive_create_dir(sftp, path, depth)
 
     @staticmethod
     def get_structure(path):
