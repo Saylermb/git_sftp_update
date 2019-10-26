@@ -29,7 +29,7 @@ class DiffGenerator:
     def _iter(self, commit):
         change_type = {"A": "add", "D": "delete", "M": "add", "T": "add", "R": "move", }
         for dif in commit.diff('HEAD~1'):
-            yield dif, change_type.get(dif.change_type) 
+            yield dif, change_type.get(dif.change_type)
         # change_type = {"R": "move", }
         # for name, value in change_type.items():
         #     yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
