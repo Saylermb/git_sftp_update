@@ -27,7 +27,7 @@ class DiffGenerator:
         return self.repo.head.commit.name_rev
 
     def _iter(self, commit):
-        change_type = {"A": "delete", "D": "add", "M": "add", "T": "add", "R": "move", }
+        change_type = {"A": "add", "D": "delete", "M": "add", "T": "add", "R": "move", }
         for dif in commit.diff('HEAD~1'):
             yield dif, change_type.get(dif.change_type)
         # change_type = {"R": "move", }
