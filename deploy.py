@@ -39,7 +39,7 @@ class DiffGenerator:
         commits_list = list(dropwhile(func, reversed(list(self.repo.iter_commits()))))
         print(commits_list)
         print(self.head_commit_name())
-        for commit in reversed(commits_list):
+        for commit in commits_list:
             for item, do in self._iter(commit):
                 yield item.b_path, item.a_path, do
 
@@ -61,7 +61,6 @@ class SFTPDeploy(SFTP):
         diff = self.get_difference()
 
         for old_path, new_path, what_do in diff:
-            print(old_path, new_path, what_do)
             try:
                 print(what_do, old_path, new_path)
                 continue
@@ -72,6 +71,7 @@ class SFTPDeploy(SFTP):
                 self.recursive_create_dir(self.sftp, Path(new_path))
                 self.S.get(what_do)(old_path, new_path)
                 print(old_path, new_path, what_do)
+        exit(0) # todo del
         with open('.git.update', 'w') as file_commit:
             file_commit.write(diff.head_commit_name())
 
