@@ -40,7 +40,7 @@ class DiffGenerator:
         print(commits_list)
         print(self.head_commit_name())
         for item, do in self._iter(commits_list[0], commits_list[-1]):
-            yield item.b_path, item.a_path, do
+            yield item.a_path, item.b_path, do
 
 
 class SFTPDeploy(SFTP):
