@@ -111,7 +111,7 @@ class SFTPDeploy(SFTP):
 
 if __name__ == '__main__':
     host = os.environ.get('HOST')
-    user = os.environ.get('HOST')
+    user = os.environ.get('USER')
     password = os.environ.get('PASSWORD')
     port = os.environ.get('PORT')
     dir_on_server = os.environ.get('DIR_ON_SERVER')
