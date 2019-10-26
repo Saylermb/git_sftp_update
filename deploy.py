@@ -1,5 +1,6 @@
 import os
 import sys
+from itertools import dropwhile
 from pathlib import Path
 from typing import Any, Union
 
@@ -34,12 +35,8 @@ class DiffGenerator:
         #     yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
 
     def __iter__(self):
-        commits_list =  list(self.repo.iter_commits())
-        while commits_list:
-            commit = commits_list.pop()
-            if commit.name_rev.split(' ')[0] == self.last_commit.split(' ')[0]:
-                commits_list = [commit]
-                break
+        func = lambda commit: commit.name_rev.split(' ')[0] != self.last_commit.split(' ')[0]
+        commits_list = list(dropwhile(func, reversed(list(self.repo.iter_commits()))))
         print(commits_list)
         print(self.head_commit_name())
         for commit in reversed(commits_list):
