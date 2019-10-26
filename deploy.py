@@ -46,8 +46,8 @@ class DiffGenerator:
 
 class SFTPDeploy(SFTP):
 
-    def __init__(self, host: str, user: str, password:
-    str, path: str, port: Union[int, str] = 22, repo_path=None):
+    def __init__(self, host: str, user: str, password:str,
+                 port: Union[int, str], path: str, repo_path=None):
         super().__init__(host, user, password, port)
         self.repo_path = repo_path if repo_path else str(Path(__file__).parent)
         self.remote_dir = path
@@ -105,42 +105,16 @@ class SFTPDeploy(SFTP):
 
 
 if __name__ == '__main__':
-    SFTPDeploy('195.123.195.243', 'root', 'zzUA4SjKt9Jn4aj3', '/var/www/html', 3110, )()
 
-    if len(sys.argv) != 6 or sys.argv in ['-h', '--help', '?']:
-        print('    python3 deploy.py {host} {user} {password} {port} {dir_on_server}\n',
+    if len(sys.argv) != 7 or sys.argv in ['-h', '--help', '?']:
+        print('    python3 deploy.py {host} {user} {password} {port} {dir_on_server} {repo_dir}\n',
               'where:\n',
               '   host = address server, example 123.456.788.90 or localhost\n',
               '   port = port server, example 22\n',
               '   user = user on server, example root or administrator\n',
               '   password = password of user, example Qwerty\n',
-              '   dir_on_server = path for dir with edit data, example /var/www/html/site_dir', )
+              '   dir_on_server = path for dir with edit data, example /var/www/html/site_dir\n',
+              '   repo_dir dir for repository')
         exit(1)
     print("")
-    repo_path = str(Path(__file__).parent.absolute())
-    remote_dir = sys.argv[-1]
-    # with SFTP(*sys.argv[1:-1]) as sftp:
-    #     sftp.chdir(remote_dir)
-    #     try:
-    #         sftp.get('.git.update', '.git.update')
-    #         with open('.git.update') as file_commit:
-    #             last_commit_name = file_commit.read()
-    #     except FileNotFoundError:
-    #         last_commit_name = None
-    #     print(f'last commit {last_commit_name}')
-    #     diff = DiffGenerator(repo_path, last_commit_name)
-    #     for old_path, new_path, what_do in diff:
-    #         print(old_path, new_path, what_do)
-    #         try:
-    #             S.get(what_do)(old_path, new_path)
-    #         except:
-    #             if what_do == 'delete':
-    #                 continue
-    #             print(f'Exception in file change {old_path} > {new_path}')
-    #             recursive_create_dir(sftp, Path(new_path))
-    #             S.get(what_do)(old_path, new_path)
-    #             print(old_path, new_path, what_do)
-    #     with open('.git.update', 'w') as file_commit:
-    #         file_commit.write(diff.head_commit_name())
-    #
-    #     sftp.put('.git.update', '.git.update')
+    SFTPDeploy(*sys.argv[1:])()
