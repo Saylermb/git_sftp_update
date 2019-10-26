@@ -2,7 +2,7 @@ import os
 import sys
 from itertools import dropwhile
 from pathlib import Path
-from typing import Any, Union
+from typing import Union
 
 from git import Repo
 
@@ -35,24 +35,24 @@ class DiffGenerator:
         #     yield zip(commit.diff('HEAD~1').iter_change_type(name), cycle([value]))
 
     def __iter__(self):
+        print(f'head commit: {self.head_commit_name()}')
         func = lambda commit: commit.name_rev.split(' ')[0] != self.last_commit.split(' ')[0]
         commits_list = list(dropwhile(func, reversed(list(self.repo.iter_commits()))))
-        print(commits_list)
-        print(self.head_commit_name())
+        print(commits_list[0], commits_list[-1])
+
         for item, do in self._iter(commits_list[0], commits_list[-1]):
             yield item.a_path, item.b_path, do
 
 
 class SFTPDeploy(SFTP):
 
-    def __init__(self,  host: str, user: str, password:
-    str, path:str, port: Union[int, str] = 22 , repo_path=None):
+    def __init__(self, host: str, user: str, password:
+    str, path: str, port: Union[int, str] = 22, repo_path=None):
         super().__init__(host, user, password, port)
         self.repo_path = repo_path if repo_path else str(Path(__file__).parent)
         self.remote_dir = path
         self.structure = self.get_structure(self.repo_path)
         self.sftp = None
-
 
     def __call__(self, *args, **kwargs):
         self.sftp = self.connect()
@@ -60,22 +60,18 @@ class SFTPDeploy(SFTP):
         diff = self.get_difference()
 
         for old_path, new_path, what_do in diff:
-            try:
-                print(what_do, old_path, new_path)
-                continue
-            except:
-                if what_do == 'delete':
-                    continue
-                print(f'Exception in file change {old_path} > {new_path}')
-                self.recursive_create_dir(self.sftp, Path(new_path))
-                self.S.get(what_do)(old_path, new_path)
-                print(old_path, new_path, what_do)
-        exit(0) # todo del
+            print(what_do, old_path, new_path)
+            if what_do == 'add':
+                self.sftp.put(str(Path(self.repo_path).joinpath(old_path)), new_path)
+            elif what_do == 'delete':
+                self.sftp.remove(new_path)
+            elif what_do == 'move':
+                self.sftp.remove(old_path)
+                self.sftp.put(str(Path(self.repo_path).joinpath(old_path)), new_path)
         with open('.git.update', 'w') as file_commit:
             file_commit.write(diff.head_commit_name())
 
         self.sftp.put('.git.update', '.git.update')
-        
 
     def get_difference(self):
         try:
@@ -89,29 +85,27 @@ class SFTPDeploy(SFTP):
 
     @staticmethod
     def recursive_create_dir(sftp, path, depth=0):
-            if depth >= len(path.parents) - 1:
-                return
-            print(sftp.listdir(str(path.parents[len(path.parents) - 1 - depth])))
-            directory = path.parents[len(path.parents) - 2 - depth]
+        if depth >= len(path.parents) - 1:
+            return
+        print(sftp.listdir(str(path.parents[len(path.parents) - 1 - depth])))
+        directory = path.parents[len(path.parents) - 2 - depth]
 
-            if not directory.name in sftp.listdir(str(path.parents[len(path.parents) - 1 - depth])):
-                print(f'create dir {str(directory)}')
-                sftp.mkdir(str(directory))
-                depth += 1
-                SFTPDeploy.recursive_create_dir(sftp, path, depth)
-            else:
-                depth += 1
-                SFTPDeploy.recursive_create_dir(sftp, path, depth)
+        if not directory.name in sftp.listdir(str(path.parents[len(path.parents) - 1 - depth])):
+            print(f'create dir {str(directory)}')
+            sftp.mkdir(str(directory))
+            depth += 1
+            SFTPDeploy.recursive_create_dir(sftp, path, depth)
+        else:
+            depth += 1
+            SFTPDeploy.recursive_create_dir(sftp, path, depth)
 
     @staticmethod
     def get_structure(path):
         return [path_[0] for path_ in os.walk(path)]
 
 
-
-
 if __name__ == '__main__':
-    SFTPDeploy('195.123.195.243', 'root', 'zzUA4SjKt9Jn4aj3', '/var/www/html', 3110,)()
+    SFTPDeploy('195.123.195.243', 'root', 'zzUA4SjKt9Jn4aj3', '/var/www/html', 3110, )()
 
     if len(sys.argv) != 6 or sys.argv in ['-h', '--help', '?']:
         print('    python3 deploy.py {host} {user} {password} {port} {dir_on_server}\n',
