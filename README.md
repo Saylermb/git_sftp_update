@@ -1,7 +1,7 @@
 #### Scrypt for update remote storage with sftp connect in github Action
 
 
-##### What this work:
+##### How this work:
 - Script update only change files (add, move, delete)
 
 ```text
