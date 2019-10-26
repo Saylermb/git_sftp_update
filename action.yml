@@ -1,0 +1,9 @@
+name: 'Deploy from GitHub to server within sftp'
+description: 'Scrypt for update remote storage with sftp connect in github Action'
+author: 'Maksim Botsev <Saylermb@gmail.com>'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+branding:
+  icon: 'git-commit'
+  color: 'orange'
