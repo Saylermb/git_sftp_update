@@ -128,4 +128,5 @@ if __name__ == '__main__':
     #           '   repo_dir dir for repository')
     #     exit(1)
     # print("")
+    print(host, user, password, port, dir_on_server, repo_dir)
     SFTPDeploy(host, user, password, port, dir_on_server, repo_dir)()
