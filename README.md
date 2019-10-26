@@ -1,4 +1,4 @@
-#### Scrypt for update remote storage with sftp connect in github Action
+#### Scrypt for update remote repository with sftp-connections in github-action
 
 
 ##### How this work:
@@ -6,7 +6,7 @@
 
 - Add to your github-actions file next stage:
 ```yaml
-      uses: Saylermb/git_sftp_update@master
+      uses: Saylermb/github-sftp-deploy-action@master
       if: github.event.prerelease == false
       env:
         HOST: ${{ secrets.HOST }}
@@ -52,7 +52,7 @@ jobs:
         python -m pip install .
     - name: Build and Deploy 
 
-      uses: Saylermb/git_sftp_update@master
+      uses: Saylermb/github-sftp-deploy-action@master
       if: github.event.prerelease == false
       env:
         HOST: ${{ secrets.HOST }}
