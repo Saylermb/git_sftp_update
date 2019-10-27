@@ -71,6 +71,10 @@ class SFTPGitDeploy(SFTP):
             elif what_do == 'move':
                 self.sftp.remove(old_path)
                 self._add(new_path)
+        self.write_change_file(diff)
+
+
+    def write_change_file(self, diff):
         with open('.git.update', 'w') as file_commit:
             file_commit.write(diff.head_commit_name())
 
@@ -114,10 +118,13 @@ class SFTPFullDeploy(SFTPGitDeploy):
                      for path_ in os.walk(self.repo_path) if path_[0]]
 
         return list(map(lambda x:(
-            x[len(self.repo_path + 1):],
-            x[len(self.repo_path + 1):],
+            x[len(self.repo_path) + 1:],
+            x[len(self.repo_path)+ 1:],
             'add'),
                         chain(*file_list)))
+
+    def write_change_file(self):
+        pass
 
 
 if __name__ == '__main__':
