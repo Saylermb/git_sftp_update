@@ -78,7 +78,7 @@ class SFTPGitDeploy(SFTP):
             self.command_execute()
 
     def command_execute(self):
-        print('execute command')
+        print(f'execute command {self.after_use}')
         ssh = self.ssh_connect()
         ssh.exec_command(f'cd {self.remote_dir}')
         stdin, stdout, stderr = ssh.exec_command(self.after_use)
