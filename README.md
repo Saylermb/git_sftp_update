@@ -61,3 +61,36 @@ jobs:
         PORT: ${{ secrets.PORT }}
         DIR_ON_SERVER: /var/www/html/
 ```
+##### Update without git
+
+Add {MODE: FULL} and all files will be moved from the github-actions folder to the remote directory. This 
+
+```yaml
+      uses: Saylermb/github-sftp-deploy-action@master
+      if: github.event.prerelease == false
+      env:
+        HOST: ${{ secrets.HOST }}
+        USER: ${{ secrets.USER }}
+        PASSWORD: ${{ secrets.PASSWORD }}
+        PORT: ${{ secrets.PORT }}
+        DIR_ON_SERVER: ${{ secrets.PATH }}
+        MODE: FULL
+```
+
+It may come in handy if you make build of project.
+
+##### Use command after update
+
+If you need to use the command on remote server, add to ENV {USE_COMMAND_AFTER_UPDATE}. After change files, the command will be executed.
+
+```yaml
+      uses: Saylermb/github-sftp-deploy-action@master
+      if: github.event.prerelease == false
+      env:
+        HOST: ${{ secrets.HOST }}
+        USER: ${{ secrets.USER }}
+        PASSWORD: ${{ secrets.PASSWORD }}
+        PORT: ${{ secrets.PORT }}
+        DIR_ON_SERVER: ${{ secrets.PATH }}
+        USE_COMMAND_AFTER_UPDATE: ls -la
+```
