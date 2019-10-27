@@ -83,7 +83,7 @@ class SFTPGitDeploy(SFTP):
         ssh.exec_command(f'cd {self.remote_dir}')
         stdin, stdout, stderr = ssh.exec_command(self.after_use)
         for line in stdout.readlines():
-            print(line.replace('\n'))
+            print(line.replace('\n', ''))
 
     def write_change_file(self, diff):
         with open('.git.update', 'w') as file_commit:
