@@ -109,17 +109,8 @@ class SFTPGitDeploy(SFTP):
 
 
 class SFTPFullDeploy(SFTPGitDeploy):
-    def get_difference(self):
-        try:
-            self.sftp.get('.git.update', '.git.update')
-            with open('.git.update') as file_commit:
-                last_commit_name = file_commit.read()
-        except FileNotFoundError:
-            last_commit_name = None
-        print(f'last commit {last_commit_name}')
-        return DiffGenerator(self.repo_path, last_commit_name)
 
-    def get_structure(self):
+    def get_difference(self):
         file_list = [[str(Path(path_[0]).joinpath(s)) for s in path_[2]]
                      for path_ in os.walk(self.repo_path) if path_[0]]
 
