@@ -1,5 +1,5 @@
 import os
-from itertools import dropwhile
+from itertools import dropwhile, chain
 from pathlib import Path
 from typing import Union
 
@@ -48,7 +48,7 @@ class DiffGenerator:
             yield item.a_path, item.b_path, do
 
 
-class SFTPDeploy(SFTP):
+class SFTPGitDeploy(SFTP):
 
     def __init__(self, host: str, user: str, password: str,
                  port: Union[int, str], path: str, repo_path=None):
@@ -105,11 +105,29 @@ class SFTPDeploy(SFTP):
             print(f'create dir {str(directory)}')
             sftp.mkdir(str(directory))
         depth += 1
-        SFTPDeploy.recursive_create_dir(sftp, path, depth)
+        SFTPGitDeploy.recursive_create_dir(sftp, path, depth)
 
-    @staticmethod
-    def get_structure(path):
-        return [path_[0] for path_ in os.walk(path)]
+
+class SFTPFullDeploy(SFTPGitDeploy):
+    def get_difference(self):
+        try:
+            self.sftp.get('.git.update', '.git.update')
+            with open('.git.update') as file_commit:
+                last_commit_name = file_commit.read()
+        except FileNotFoundError:
+            last_commit_name = None
+        print(f'last commit {last_commit_name}')
+        return DiffGenerator(self.repo_path, last_commit_name)
+
+    def get_structure(self):
+        file_list = [[str(Path(path_[0]).joinpath(s)) for s in path_[2]]
+                     for path_ in os.walk(self.repo_path) if path_[0]]
+
+        return list(map(lambda x:(
+            x[len(self.repo_path + 1):],
+            x[len(self.repo_path + 1):],
+            'add'),
+                        chain(*file_list)))
 
 
 if __name__ == '__main__':
@@ -119,5 +137,11 @@ if __name__ == '__main__':
     port = os.environ.get('PORT', '22')
     dir_on_server = os.environ.get('DIR_ON_SERVER')
     repo_dir = '/github/workspace'
+    mode = os.environ.get('MODE', 'GIT')
     print(host, user, password, port, dir_on_server, repo_dir)
-    SFTPDeploy(host, user, password, port, dir_on_server, repo_dir)()
+    if mode == 'GIT':
+        SFTPGitDeploy(host, user, password, port, dir_on_server, repo_dir)()
+    elif mode == 'FULL':
+        SFTPFullDeploy(host, user, password, port, dir_on_server, repo_dir)()
+    else:
+        raise ValueError('Unknown mod name')
