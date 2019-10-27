@@ -55,7 +55,6 @@ class SFTPGitDeploy(SFTP):
         super().__init__(host, user, password, port)
         self.repo_path = repo_path if repo_path else str(Path(__file__).parent)
         self.remote_dir = path
-        self.structure = self.get_structure(self.repo_path)
         self.sftp = None
 
     def __call__(self, *args, **kwargs):
