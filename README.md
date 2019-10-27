@@ -79,6 +79,21 @@ Add {MODE: FULL} and all files will be moved from the github-actions folder to t
 
 It may come in handy if you make build of project.
 
+You can specify the build folder through ENV {BUILD_FOLDER}
+
+```yaml
+      uses: Saylermb/github-sftp-deploy-action@master
+      if: github.event.prerelease == false
+      env:
+        HOST: ${{ secrets.HOST }}
+        USER: ${{ secrets.USER }}
+        PASSWORD: ${{ secrets.PASSWORD }}
+        PORT: ${{ secrets.PORT }}
+        DIR_ON_SERVER: ${{ secrets.PATH }}
+        MODE: FULL
+        BUILD_FOLDER: build
+```
+
 ##### Use command after update
 
 If you need to use the command on remote server, add to ENV {USE_COMMAND_AFTER_UPDATE}. After change files, the command will be executed.
