@@ -80,8 +80,8 @@ class SFTPGitDeploy(SFTP):
     def command_execute(self):
         print(f'execute command {self.after_use}')
         ssh = self.ssh_connect()
-        ssh.exec_command(f'cd {self.remote_dir}')
-        stdin, stdout, stderr = ssh.exec_command(self.after_use)
+        ssh.exec_command(f'')
+        stdin, stdout, stderr = ssh.exec_command(f'cd {self.remote_dir} && {self.after_use}')
         for line in stdout.readlines():
             print(line.replace('\n', ''))
 
