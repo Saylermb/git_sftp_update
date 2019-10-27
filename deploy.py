@@ -51,11 +51,12 @@ class DiffGenerator:
 class SFTPGitDeploy(SFTP):
 
     def __init__(self, host: str, user: str, password: str,
-                 port: Union[int, str], path: str, repo_path=None):
+                 port: Union[int, str], path: str, repo_path=None, after_use = None):
         super().__init__(host, user, password, port)
         self.repo_path = repo_path if repo_path else str(Path(__file__).parent)
         self.remote_dir = path
         self.sftp = None
+        self.after_use = after_use
 
     def __call__(self, *args, **kwargs):
         self.sftp = self.connect()
@@ -72,7 +73,15 @@ class SFTPGitDeploy(SFTP):
                 self.sftp.remove(old_path)
                 self._add(new_path)
         self.write_change_file(diff)
+        if self.after_use:
+            self.command_execute()
 
+    def command_execute(self):
+        ssh = self.ssh_connect()
+        ssh.exec_command(f'cd {self.remote_dir}')
+        stdin, stdout, stderr = ssh.exec_command(self.after_use)
+        for line in stdout.readlines():
+            print(line.replace('\n'))
 
     def write_change_file(self, diff):
         with open('.git.update', 'w') as file_commit:
@@ -119,7 +128,7 @@ class SFTPFullDeploy(SFTPGitDeploy):
 
         return list(map(lambda x:(
             x[len(self.repo_path) + 1:],
-            x[len(self.repo_path)+ 1:],
+            x[len(self.repo_path) + 1:],
             'add'),
                         chain(*file_list)))
 
@@ -135,10 +144,11 @@ if __name__ == '__main__':
     dir_on_server = os.environ.get('DIR_ON_SERVER')
     repo_dir = '/github/workspace'
     mode = os.environ.get('MODE', 'GIT')
+    after_use = os.environ.get('USE_COMMAND_AFTER_UPDATE')
     print(host, user, password, port, dir_on_server, repo_dir)
     if mode == 'GIT':
-        SFTPGitDeploy(host, user, password, port, dir_on_server, repo_dir)()
+        SFTPGitDeploy(host, user, password, port, dir_on_server, repo_dir, after_use)()
     elif mode == 'FULL':
-        SFTPFullDeploy(host, user, password, port, dir_on_server, repo_dir)()
+        SFTPFullDeploy(host, user, password, port, dir_on_server, repo_dir, after_use)()
     else:
         raise ValueError('Unknown mod name')
