@@ -73,10 +73,12 @@ class SFTPGitDeploy(SFTP):
                 self.sftp.remove(old_path)
                 self._add(new_path)
         self.write_change_file(diff)
+        self.sftp.close()
         if self.after_use:
             self.command_execute()
 
     def command_execute(self):
+        print('execute command')
         ssh = self.ssh_connect()
         ssh.exec_command(f'cd {self.remote_dir}')
         stdin, stdout, stderr = ssh.exec_command(self.after_use)
