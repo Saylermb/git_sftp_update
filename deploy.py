@@ -123,7 +123,7 @@ class SFTPFullDeploy(SFTPGitDeploy):
             'add'),
                         chain(*file_list)))
 
-    def write_change_file(self):
+    def write_change_file(self, *args):
         pass
 
 
