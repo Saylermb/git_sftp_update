@@ -14,6 +14,7 @@
         PASSWORD: ${{ secrets.PASSWORD }}
         PORT: ${{ secrets.PORT }}
         DIR_ON_SERVER: ${{ secrets.PATH }}
+        MODE: GIT
 ```
     where
      - secrets.HOST: ip address server
@@ -21,7 +22,7 @@
      - secrets.PASSWORD: password
      - secrets.PORT: sftp port
      - secrets.PATH: path to direcotory for update
-
+    
 - After first usage, in remove directory will appear .git.update file with number commit. 
 If there is no file, the script updates according to the penultimate commit.
 
@@ -60,6 +61,7 @@ jobs:
         PASSWORD: ${{ secrets.PASSWORD }}
         PORT: ${{ secrets.PORT }}
         DIR_ON_SERVER: /var/www/html/
+        MODE: GIT
 ```
 ##### Update without git
 
@@ -107,6 +109,7 @@ If you need to use the command on remote server, add to ENV {USE_COMMAND_AFTER_U
         PASSWORD: ${{ secrets.PASSWORD }}
         PORT: ${{ secrets.PORT }}
         DIR_ON_SERVER: ${{ secrets.PATH }}
+        MODE: GIT
         USE_COMMAND_BEFOR_UPDATE: cp setting.py setting_old.py
 ```
 
@@ -123,13 +126,14 @@ If you need to use the command on remote server, add to ENV {USE_COMMAND_AFTER_U
         PASSWORD: ${{ secrets.PASSWORD }}
         PORT: ${{ secrets.PORT }}
         DIR_ON_SERVER: ${{ secrets.PATH }}
+        MODE: GIT
         USE_COMMAND_AFTER_UPDATE: ls -la
 ```
 
 
 ##### Exit without update file
 
-If there is no need to replace files, add {MODE} = NONE
+in this config, command will be used but without change files
 
 ```yaml
       uses: Saylermb/github-sftp-deploy-action@master
@@ -140,9 +144,6 @@ If there is no need to replace files, add {MODE} = NONE
         PASSWORD: ${{ secrets.PASSWORD }}
         PORT: ${{ secrets.PORT }}
         DIR_ON_SERVER: ${{ secrets.PATH }}
-        MODE: NONE
-        BUILD_FOLDER: build
         USE_COMMAND_BEFOR_UPDATE: cp setting.py setting_old.py
         USE_COMMAND_AFTER_UPDATE: python3 test.py
 ```
-in this config, command will be used but without change files
