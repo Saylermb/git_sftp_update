@@ -155,14 +155,13 @@ if __name__ == '__main__':
     repo_dir = '/github/workspace'
     mode = os.environ.get('MODE', 'NONE')
     build_folder = os.environ.get('BUILD_FOLDER', 'GIT')
+    pre_use = os.environ.get('USE_COMMAND_BEFORE_UPDATE')
+    after_use = os.environ.get('USE_COMMAND_AFTER_UPDATE')
     if build_folder and mode == 'FULL':
         raise ValueError('Mode GIT can\'t be use with BUILD_FOLDER')
     if build_folder:
         repo_dir = str(Path(repo_dir).joinpath(build_folder))
         repo_dir = repo_dir if repo_dir[-1] != '/' else repo_dir[:-1]
-    pre_use = os.environ.get('USE_COMMAND_BEFORE_UPDATE')
-    after_use = os.environ.get('USE_COMMAND_AFTER_UPDATE')
-    print(host, user, password, port, dir_on_server, repo_dir)
     if mode == 'GIT':
         SFTPGitDeploy(host, user, password, port, dir_on_server, repo_dir, pre_use, after_use)()
     elif mode == 'FULL':
