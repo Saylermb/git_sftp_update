@@ -151,9 +151,9 @@ if __name__ == '__main__':
     user = os.environ.get('USER', 'root')
     password = os.environ.get('PASSWORD')
     port = os.environ.get('PORT', '22')
-    dir_on_server = os.environ.get('DIR_ON_SERVER')
+    dir_on_server = os.environ.get('DIR_ON_SERVER', '/')
     repo_dir = '/github/workspace'
-    mode = os.environ.get('MODE', 'GIT')
+    mode = os.environ.get('MODE', 'NONE')
     build_folder = os.environ.get('BUILD_FOLDER', 'GIT')
     if build_folder and mode == 'FULL':
         raise ValueError('Mode GIT can\'t be use with BUILD_FOLDER')
