@@ -96,6 +96,22 @@ You can specify the build folder through ENV {BUILD_FOLDER}
 
 ##### Use command after update
 
+If you need to use the command on remote server, add to ENV {USE_COMMAND_AFTER_UPDATE}. Before change files, the command will be executed.
+
+```yaml
+      uses: Saylermb/github-sftp-deploy-action@master
+      if: github.event.prerelease == false
+      env:
+        HOST: ${{ secrets.HOST }}
+        USER: ${{ secrets.USER }}
+        PASSWORD: ${{ secrets.PASSWORD }}
+        PORT: ${{ secrets.PORT }}
+        DIR_ON_SERVER: ${{ secrets.PATH }}
+        USE_COMMAND_BEFOR_UPDATE: cp setting.py setting_old.py
+```
+
+##### Use command after update
+
 If you need to use the command on remote server, add to ENV {USE_COMMAND_AFTER_UPDATE}. After change files, the command will be executed.
 
 ```yaml
@@ -109,3 +125,24 @@ If you need to use the command on remote server, add to ENV {USE_COMMAND_AFTER_U
         DIR_ON_SERVER: ${{ secrets.PATH }}
         USE_COMMAND_AFTER_UPDATE: ls -la
 ```
+
+
+##### Exit without update file
+
+If there is no need to replace files, add {MODE} = NONE
+
+```yaml
+      uses: Saylermb/github-sftp-deploy-action@master
+      if: github.event.prerelease == false
+      env:
+        HOST: ${{ secrets.HOST }}
+        USER: ${{ secrets.USER }}
+        PASSWORD: ${{ secrets.PASSWORD }}
+        PORT: ${{ secrets.PORT }}
+        DIR_ON_SERVER: ${{ secrets.PATH }}
+        MODE: NONE
+        BUILD_FOLDER: build
+        USE_COMMAND_BEFOR_UPDATE: cp setting.py setting_old.py
+        USE_COMMAND_AFTER_UPDATE: python3 test.py
+```
+in this config, command will be used but without change files

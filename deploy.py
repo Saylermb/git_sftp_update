@@ -51,14 +51,17 @@ class DiffGenerator:
 class SFTPGitDeploy(SFTP):
 
     def __init__(self, host: str, user: str, password: str,
-                 port: Union[int, str], path: str, repo_path=None, after_use = None):
+                 port: Union[int, str], path: str, repo_path=None, before_use=None, after_use=None):
         super().__init__(host, user, password, port)
         self.repo_path = repo_path if repo_path else str(Path(__file__).parent)
         self.remote_dir = path
         self.sftp = None
         self.after_use = after_use
+        self.before_use = before_use
 
     def __call__(self, *args, **kwargs):
+        if self.before_use:
+            self.command_execute(self.before_use)
         self.sftp = self.connect()
         self.sftp.chdir(self.remote_dir)
         diff = self.get_difference()
@@ -75,13 +78,13 @@ class SFTPGitDeploy(SFTP):
         self.write_change_file(diff)
         self.sftp.close()
         if self.after_use:
-            self.command_execute()
+            self.command_execute(self.after_use)
 
-    def command_execute(self):
-        print(f'execute command {self.after_use}')
+    def command_execute(self, command):
+        print(f'execute command {command}')
         ssh = self.ssh_connect()
         ssh.exec_command(f'')
-        stdin, stdout, stderr = ssh.exec_command(f'cd {self.remote_dir} && {self.after_use}')
+        stdin, stdout, stderr = ssh.exec_command(f'cd {self.remote_dir} && {command}')
         for line in stdout.readlines():
             print(line.replace('\n', ''))
 
@@ -128,7 +131,7 @@ class SFTPFullDeploy(SFTPGitDeploy):
         file_list = [[str(Path(path_[0]).joinpath(s)) for s in path_[2]]
                      for path_ in os.walk(self.repo_path) if path_[0]]
 
-        return list(map(lambda x:(
+        return list(map(lambda x: (
             x[len(self.repo_path) + 1:],
             x[len(self.repo_path) + 1:],
             'add'),
@@ -136,6 +139,11 @@ class SFTPFullDeploy(SFTPGitDeploy):
 
     def write_change_file(self, *args):
         pass
+
+
+class SFTPNonelDeploy(SFTPGitDeploy):
+    def get_difference(self):
+        return []
 
 
 if __name__ == '__main__':
@@ -151,12 +159,15 @@ if __name__ == '__main__':
         raise ValueError('Mode GIT can\'t be use with BUILD_FOLDER')
     if build_folder:
         repo_dir = str(Path(repo_dir).joinpath(build_folder))
-        repo_dir = repo_dir if repo_dir[-1] !='/' else repo_dir[:-1]
+        repo_dir = repo_dir if repo_dir[-1] != '/' else repo_dir[:-1]
+    pre_use = os.environ.get('USE_COMMAND_BEFORE_UPDATE')
     after_use = os.environ.get('USE_COMMAND_AFTER_UPDATE')
     print(host, user, password, port, dir_on_server, repo_dir)
     if mode == 'GIT':
-        SFTPGitDeploy(host, user, password, port, dir_on_server, repo_dir, after_use)()
+        SFTPGitDeploy(host, user, password, port, dir_on_server, repo_dir, pre_use, after_use)()
     elif mode == 'FULL':
-        SFTPFullDeploy(host, user, password, port, dir_on_server, repo_dir, after_use)()
+        SFTPFullDeploy(host, user, password, port, dir_on_server, repo_dir, pre_use, after_use)()
+    elif mode == 'NONE':
+        SFTPFullDeploy(host, user, password, port, dir_on_server, repo_dir, pre_use, after_use)()
     else:
         raise ValueError('Unknown mod name')
