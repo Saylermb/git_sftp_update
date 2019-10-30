@@ -141,7 +141,7 @@ class SFTPFullDeploy(SFTPGitDeploy):
         pass
 
 
-class SFTPNonelDeploy(SFTPGitDeploy):
+class SFTPNoneDeploy(SFTPGitDeploy):
     def get_difference(self):
         return []
 
@@ -168,6 +168,6 @@ if __name__ == '__main__':
     elif mode == 'FULL':
         SFTPFullDeploy(host, user, password, port, dir_on_server, repo_dir, pre_use, after_use)()
     elif mode == 'NONE':
-        SFTPFullDeploy(host, user, password, port, dir_on_server, repo_dir, pre_use, after_use)()
+        SFTPNoneDeploy(host, user, password, port, dir_on_server, repo_dir, pre_use, after_use)()
     else:
         raise ValueError('Unknown mod name')
