@@ -83,7 +83,6 @@ class SFTPGitDeploy(SFTP):
     def command_execute(self, command):
         print(f'execute command {command}')
         ssh = self.ssh_connect()
-        ssh.exec_command(f'')
         ssh.exec_command(f'cd {self.remote_dir}')
         for cmd in command.split('&&'):
             stdin, stdout, stderr = ssh.exec_command(cmd)
