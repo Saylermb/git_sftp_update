@@ -141,7 +141,7 @@ class SFTPFullDeploy(SFTPGitDeploy):
         pass
 
 
-class SFTPNoneDeploy(SFTPGitDeploy):
+class SFTPNoneDeploy(SFTPFullDeploy):
     def get_difference(self):
         return []
 
