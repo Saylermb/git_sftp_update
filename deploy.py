@@ -56,8 +56,8 @@ class SFTPGitDeploy(SFTP):
         self.repo_path = repo_path if repo_path else str(Path(__file__).parent)
         self.remote_dir = path
         self.sftp = None
-        self.after_use = after_use
         self.before_use = before_use
+        self.after_use = after_use
 
     def __call__(self, *args, **kwargs):
         if self.before_use:
@@ -88,6 +88,7 @@ class SFTPGitDeploy(SFTP):
             stdin, stdout, stderr = ssh.exec_command(cmd)
             for line in stdout.readlines():
                 print(line.replace('\n', ''))
+        ssh.close()
 
     def write_change_file(self, diff):
         with open('.git.update', 'w') as file_commit:

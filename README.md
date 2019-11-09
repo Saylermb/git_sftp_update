@@ -144,6 +144,6 @@ in this config, command will be used but without change files
         PASSWORD: ${{ secrets.PASSWORD }}
         PORT: ${{ secrets.PORT }}
         DIR_ON_SERVER: ${{ secrets.PATH }}
-        USE_COMMAND_BEFOR_UPDATE: cp setting.py setting_old.py
+        USE_COMMAND_BEFORE_UPDATE: cp setting.py setting_old.py
         USE_COMMAND_AFTER_UPDATE: python3 test.py
 ```
