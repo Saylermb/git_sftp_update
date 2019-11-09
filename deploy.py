@@ -88,6 +88,9 @@ class SFTPGitDeploy(SFTP):
             stdin, stdout, stderr = ssh.exec_command(cmd)
             for line in stdout.readlines():
                 print(line.replace('\n', ''))
+            for line in stderr.readlines():
+                print(line.replace('\n', ''))
+
         ssh.close()
 
     def write_change_file(self, diff):
