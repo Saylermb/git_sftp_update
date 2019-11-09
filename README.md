@@ -65,7 +65,7 @@ jobs:
 ```
 ##### Update without git
 
-Add {MODE: FULL} and all files will be moved from the github-actions folder to the remote directory. This 
+Add {MODE: FULL} and all files will be moved from the github-actions folder to the remote directory. 
 
 ```yaml
       uses: Saylermb/github-sftp-deploy-action@master

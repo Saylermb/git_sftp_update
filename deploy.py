@@ -154,10 +154,10 @@ if __name__ == '__main__':
     dir_on_server = os.environ.get('DIR_ON_SERVER', '/')
     repo_dir = '/github/workspace'
     mode = os.environ.get('MODE', 'NONE')
-    build_folder = os.environ.get('BUILD_FOLDER', 'GIT')
+    build_folder = os.environ.get('BUILD_FOLDER')
     pre_use = os.environ.get('USE_COMMAND_BEFORE_UPDATE')
     after_use = os.environ.get('USE_COMMAND_AFTER_UPDATE')
-    if build_folder and mode == 'FULL':
+    if build_folder and mode == 'GIT':
         raise ValueError('Mode GIT can\'t be use with BUILD_FOLDER')
     if build_folder:
         repo_dir = str(Path(repo_dir).joinpath(build_folder))
